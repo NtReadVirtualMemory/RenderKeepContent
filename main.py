@@ -27,6 +27,17 @@ def GetSha(token, owner, repo, path):
         print(f'Error: {response.status_code}')
         print(response.json())
 
+def FileExist(owner, repo, path):
+        url = f'https://raw.githubusercontent.com/{owner}/{repo}/main/{path}'
+
+    
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+
 def GetContent(token, owner, repo, path):
     url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
 
@@ -104,6 +115,7 @@ owner = 'NtReadVirtualMemory' # Your Name
 repo = 'Testing-Shit' # Repo Name
 path = 'Test_Final_File' # Name of your File
 
+print("File Exist:", FileExist(owner, repo, path))
 GetContent(token, owner, repo, path)
 CreateFile(token, owner, repo, path, "Hello")
 UpdateFile(token, owner, repo, path, "Hello2")
