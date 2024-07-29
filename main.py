@@ -26,6 +26,7 @@ def GetSha(token, owner, repo, path):
     else:
         print(f'Error: {response.status_code}')
         print(response.json())
+        return "???"
 
 def FileExist(owner, repo, path):
         url = f'https://raw.githubusercontent.com/{owner}/{repo}/main/{path}'
@@ -52,10 +53,11 @@ def GetContent(token, owner, repo, path):
         data = response.json()
         RawLink = data["download_url"]
         content = requests.get(RawLink)
-        return content
+        return content.text or content.content
     else:
         print(f'Error: {response.status_code}')
         print(response.json())
+        return "FILE_DOES_NOT_EXIST_OR_IS_UNKNOWN"
 
 def CreateFile(token, owner, repo, path, content):
 
@@ -76,16 +78,14 @@ def CreateFile(token, owner, repo, path, content):
         'content': text_to_base64(content)
     }
 
-    print(payload)
-
     response = requests.put(url, headers=headers, data=json.dumps(payload))
 
     if response.status_code in [200, 201]:
-        data = response.json()
-        print(data)
+        return True
     else:
         print(f'Error: {response.status_code}')
         print(response.json())
+        return False
 
 def UpdateFile(token, owner, repo, path, content):
         url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
@@ -107,15 +107,52 @@ def UpdateFile(token, owner, repo, path, content):
 
         response = requests.put(url, headers=headers, data=json.dumps(data))
 
-        print(response.status_code)
-        print(response.json())
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+
+def AddLine(token, owner, repo, path, content):
+
+    oldcon = GetContent(token, owner, repo, path)
+
+    if oldcon:
+        url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
+        headers = {
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {token}",
+                "X-GitHub-Api-Version": "2022-11-28"
+            }
+
+        data = {
+            "message": "Update by Python",
+            "committer": {
+                "name": "Python",
+                "email": "NONE"
+            },
+            "content": text_to_base64(oldcon + "\n" + content),
+            "sha": GetSha(token, owner, repo, path)
+        }
+
+        response = requests.put(url, headers=headers, data=json.dumps(data))
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+
 
 token = 'YOUR_TOKEN_HERE' # Your API Token -> https://github.com/settings/tokens/new (select repo, project)
 owner = 'NtReadVirtualMemory' # Your Name
 repo = 'Testing-Shit' # Repo Name
-path = 'Test_Final_File' # Name of your File
+path = 'FinalTestIG' # Name of your File
 
-print("File Exist:", FileExist(owner, repo, path))
-GetContent(token, owner, repo, path)
+print("Create File")
 CreateFile(token, owner, repo, path, "Hello")
+print("File Exist:", FileExist(owner, repo, path))
+print("Get Content")
+GetContent(token, owner, repo, path)
+print("Updating...")
 UpdateFile(token, owner, repo, path, "Hello2")
+print("Adding Line...")
+AddLine(token, owner, repo, path, "LOL")
+print("Done!")
